@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <meta name="theme-color" content="#0b0b0e">
+  <title>Xarc Massage</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+
+  <style>
+    /* WhatsApp-style mobile chat layout: composer stays at the bottom */
+    html, body { min-height: 100%; }
+    body { padding: 0; }
+    .shell { width: min(760px, 100%); height: 100dvh; }
+    .chat-card {
+      height: 100dvh;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      border-radius: 0;
+    }
+    .chat-header { flex: 0 0 auto; }
+    .messages-wrap {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .messages {
+      height: 100%;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding-bottom: 18px;
+    }
+    .typing-indicator { flex: 0 0 auto; }
+    .composer {
+      flex: 0 0 auto;
+      position: sticky;
+      bottom: 0;
+      z-index: 5;
+      padding-bottom: max(7px, env(safe-area-inset-bottom));
+    }
+    .tiny {
+      flex: 0 0 auto;
+      padding-bottom: max(10px, env(safe-area-inset-bottom));
+    }
+    @media (min-width: 761px) {
+      body { padding: 14px; }
+      .shell { height: min(92dvh, 900px); }
+      .chat-card { height: 100%; border-radius: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <section id="home" class="card home-card">
+      <div class="brand">XARC <span>MASSAGE</span></div>
+      <p class="muted">Private anonymous chat • browser-side encryption</p>
+      <button id="create">Create Private Room</button>
+      <button id="searchRoom" class="secondary-action" type="button">Search Private Server</button>
+      <button id="barcodeServer" class="secondary-action" type="button">Barcode Private Server</button>
+      <div class="security">🔐 Pesan dan file dienkripsi di browser sebelum dikirim.</div>
+    </section>
+
+    <section id="chat" class="chat-card hidden">
+      <header class="chat-header">
+        <div class="group-heading">
+          <div class="header-title">
+            <div id="roomNames" class="room-names">Private Room : —</div>
+            <div id="status" class="muted">connected 1/2</div>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button id="menuButton" class="menu-button ghost" type="button" aria-label="Buka menu room" aria-expanded="false">☰</button>
+          <div id="roomMenu" class="room-menu hidden" role="menu">
+            <button id="copy" type="button" role="menuitem">Copy Link</button>
+            <button id="copyCode" type="button" role="menuitem">Copy Code</button>
+            <button id="barcodeRoom" type="button" role="menuitem">Barcode Room</button>
+            <button id="changeRoom" type="button" role="menuitem">Ganti Private Room</button>
+            <button id="changeCapacity" type="button" role="menuitem">Ganti kapasitas Room</button>
+            <button id="deleteRoom" class="danger-menu" type="button" role="menuitem">Hapus Room</button>
+          </div>
+        </div>
+      </header>
+
+      <div class="messages-wrap">
+        <div id="messages" class="messages"></div>
+        <button id="jumpBottom" class="jump-bottom hidden" type="button" aria-label="Loncat ke pesan terbaru" title="Loncat ke bawah">↓</button>
+      </div>
+      <div id="typing" class="typing-indicator" aria-live="polite" aria-label="Seseorang sedang mengetik">
+        <div class="typing-bubble"><span></span><span></span><span></span></div>
+      </div>
+
+      <div class="composer">
+        <div id="replyPreview" class="reply-preview hidden">
+          <div class="reply-preview-accent"></div>
+          <div class="reply-preview-content">
+            <strong id="replyPreviewTitle">Membalas pesan</strong>
+            <span id="replyPreviewText"></span>
+          </div>
+          <button id="cancelReply" class="reply-preview-close" type="button" aria-label="Batalkan balasan">×</button>
+        </div>
+        <div class="composer-row">
+        <input id="file" type="file" accept="image/*,video/*,.pdf,.txt,.zip,.doc,.docx,.xls,.xlsx,.ppt,.pptx" hidden>
+        <input id="galleryInput" type="file" accept="image/*,video/*" hidden>
+        <input id="cameraInput" type="file" accept="image/*,video/*" capture="environment" hidden>
+        <input id="documentInput" type="file" accept=".pdf,.txt,.zip,.doc,.docx,.xls,.xlsx,.ppt,.pptx,application/*,text/*" hidden>
+        <button id="attach" class="icon-button ghost" aria-label="Lampirkan file">＋</button>
+        <textarea id="text" rows="1" enterkeyhint="enter" placeholder="Tulis pesan…" autocomplete="off" spellcheck="true"></textarea>
+        <button id="send" class="send-button" aria-label="Kirim pesan">➤</button>
+        </div>
+      </div>
+      <p class="tiny">File hingga 50 MB. Room bersifat sementara.</p>
+    </section>
+  </main>
+
+  <div id="searchModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="searchTitle">
+    <div class="modal-backdrop"></div>
+    <div class="capacity-panel search-panel">
+      <button id="closeSearch" class="modal-close" aria-label="Tutup">×</button>
+      <div class="modal-kicker">XARC MASSAGE</div>
+      <h2 id="searchTitle">Search Private Server</h2>
+      <p class="modal-muted">Masukkan kode room 6 karakter untuk bergabung tanpa link.</p>
+      <div class="custom-row search-row">
+        <input id="roomCodeInput" type="text" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABC123">
+        <button id="joinByCode">Join Room</button>
+      </div>
+      <small class="search-hint">Kode terdiri dari angka, huruf, atau simbol dan berbeda untuk setiap room.</small>
+    </div>
+  </div>
+
+  <div id="capacityModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="capacityTitle">
+    <div class="modal-backdrop"></div>
+    <div class="capacity-panel">
+      <button id="closeCapacity" class="modal-close" aria-label="Tutup">×</button>
+      <div class="modal-kicker">XARC MASSAGE</div>
+      <h2 id="capacityTitle">Pilih kapasitas room</h2>
+      <p id="capacityDescription" class="modal-muted">Tentukan jumlah maksimal anggota yang dapat masuk ke room ini.</p>
+      <div class="capacity-grid">
+        <button class="capacity-option" data-capacity="2"><strong>1/2</strong><span>maks. 2 orang</span></button>
+        <button class="capacity-option" data-capacity="4"><strong>1/4</strong><span>maks. 4 orang</span></button>
+        <button class="capacity-option" data-capacity="6"><strong>1/6</strong><span>maks. 6 orang</span></button>
+        <button class="capacity-option" data-capacity="8"><strong>1/8</strong><span>maks. 8 orang</span></button>
+        <button class="capacity-option" data-capacity="10"><strong>1/10</strong><span>maks. 10 orang</span></button>
+        <button id="customCapacity" class="capacity-option"><strong>1/custom</strong><span>pilih sendiri</span></button>
+      </div>
+      <div id="customBox" class="custom-box hidden">
+        <label for="customMembers">Jumlah maksimal anggota</label>
+        <div class="custom-row">
+          <input id="customMembers" type="number" inputmode="numeric" min="2" max="100" value="12">
+          <button id="createCustom">Buat Room</button>
+        </div>
+        <small>2–100 anggota.</small>
+      </div>
+    </div>
+  </div>
+
+  <div id="attachmentSheet" class="attachment-sheet hidden" role="dialog" aria-modal="true" aria-label="Lampiran">
+    <div class="attachment-backdrop"></div>
+    <div class="attachment-panel">
+      <div class="sheet-handle"></div>
+      <div class="attachment-grid attachment-grid-four">
+        <button id="pickGallery" class="attachment-item" type="button"><span class="attachment-icon gallery-icon"><i class="bi bi-image"></i></span><span>Galeri</span></button>
+        <button id="pickCamera" class="attachment-item" type="button"><span class="attachment-icon camera-icon"><i class="bi bi-camera"></i></span><span>Kamera</span></button>
+        <button id="pickLocation" class="attachment-item" type="button"><span class="attachment-icon location-icon"><i class="bi bi-geo-alt"></i></span><span>Lokasi</span></button>
+        <button id="pickDocument" class="attachment-item" type="button"><span class="attachment-icon document-icon"><i class="bi bi-folder"></i></span><span>Dokumen</span></button>
+      </div>
+      <button id="closeAttachment" class="sheet-cancel" type="button">Batal</button>
+    </div>
+  </div>
+
+
+  <div id="cameraModal" class="camera-modal hidden" role="dialog" aria-modal="true" aria-labelledby="cameraTitle">
+    <div class="camera-backdrop"></div>
+    <div class="camera-panel">
+      <div class="camera-head">
+        <div>
+          <div class="modal-kicker">XARC MASSAGE</div>
+          <h2 id="cameraTitle">Kamera</h2>
+        </div>
+        <button id="closeCamera" class="modal-close" type="button" aria-label="Tutup">×</button>
+      </div>
+      <div class="camera-view-wrap">
+        <video id="cameraPreview" class="camera-preview" autoplay playsinline muted></video>
+        <canvas id="cameraCanvas" class="hidden"></canvas>
+        <div id="cameraStatus" class="camera-status">Siap</div>
+      </div>
+      <div class="camera-controls">
+        <button id="cameraModePhoto" class="camera-mode active" type="button">Foto</button>
+        <button id="cameraModeVideo" class="camera-mode" type="button">Video</button>
+      </div>
+      <div class="camera-actions">
+        <button id="cameraCapture" class="camera-shutter" type="button" aria-label="Ambil foto atau mulai merekam"><i class="bi bi-camera"></i></button>
+      </div>
+      <div class="camera-hint">Foto atau video akan dikirim ke chat setelah diambil.</div>
+    </div>
+  </div>
+
+  <div id="locationModal" class="location-modal hidden" role="dialog" aria-modal="true" aria-labelledby="locationTitle">
+    <div class="location-backdrop"></div>
+    <div class="location-panel">
+      <div class="location-head">
+        <div>
+          <div class="modal-kicker">XARC MASSAGE</div>
+          <h2 id="locationTitle">Pilih lokasi</h2>
+        </div>
+        <button id="closeLocation" class="modal-close" type="button" aria-label="Tutup">×</button>
+      </div>
+      <div id="locationMap" class="location-map"></div>
+      <div id="locationCoords" class="location-coords">Ketuk peta untuk memilih lokasi.</div>
+      <button id="sendLocation" class="send-location" type="button" disabled><i class="bi bi-send"></i> Kirim lokasi ini</button>
+    </div>
+  </div>
+
+
+  <div id="barcodeRoomModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="barcodeRoomTitle">
+    <div class="modal-backdrop"></div>
+    <div class="capacity-panel barcode-room-panel">
+      <button id="closeBarcodeRoom" class="modal-close" type="button" aria-label="Tutup">×</button>
+      <div class="modal-kicker">XARC MASSAGE</div>
+      <h2 id="barcodeRoomTitle">Barcode Room</h2>
+      <p class="modal-muted">Scan QR ini dengan Google Lens atau kamera HP untuk masuk ke Private Room.</p>
+      <div id="roomQr" class="room-qr" aria-label="QR Code Private Room"></div>
+      <div id="roomQrCode" class="qr-room-code">—</div>
+      <button id="shareBarcodeRoom" class="qr-share-button" type="button"><i class="bi bi-share"></i> Bagikan Barcode</button>
+    </div>
+  </div>
+
+  <div id="barcodeScannerModal" class="barcode-scanner-modal hidden" role="dialog" aria-modal="true" aria-labelledby="barcodeScannerTitle">
+    <div class="barcode-scanner-backdrop"></div>
+    <div class="barcode-scanner-panel">
+      <div class="barcode-scanner-head">
+        <div>
+          <div class="modal-kicker">XARC MASSAGE</div>
+          <h2 id="barcodeScannerTitle">Barcode Private Server</h2>
+        </div>
+        <button id="closeBarcodeScanner" class="modal-close" type="button" aria-label="Tutup">×</button>
+      </div>
+      <div class="barcode-view-wrap">
+        <video id="barcodeScannerPreview" class="barcode-scanner-preview" autoplay playsinline muted></video>
+        <div class="barcode-scan-frame"><span></span></div>
+        <div id="barcodeScannerStatus" class="camera-status">Arahkan QR ke dalam kotak</div>
+      </div>
+      <div class="barcode-scanner-actions">
+        <button id="scanFromGallery" class="secondary-action" type="button"><i class="bi bi-image"></i> Pilih dari Galeri</button>
+        <input id="barcodeGalleryInput" type="file" accept="image/*" hidden>
+      </div>
+      <p class="barcode-hint">Bisa scan Barcode Room dari kamera atau gambar QR dari galeri, seperti scan QRIS.</p>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+  <script src="/config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/socket.io-client@4.8.1/dist/socket.io.min.js" crossorigin="anonymous"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
