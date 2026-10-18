@@ -1,0 +1,14 @@
+VERSI PROYEK: XARC MASSAGE v1.0.0
+
+PROMPT UNTUK MELANJUTKAN / MEMPERBAIKI PROYEK XARC MASSAGE
+
+Tolong siapkan proyek Xarc Massage dari ZIP yang saya unggah agar bisa di-deploy. Metode: Vercel untuk frontend dan Render untuk backend Socket.IO. Pertahankan desain dan fitur yang sudah ada; ubah hanya yang diperlukan untuk deployment dan kestabilan. Tema visual yang diinginkan adalah cyberpunk ungu-hitam (purple-black), dengan aksen neon ungu, latar gelap, kontras teks yang jelas, dan tampilan responsif untuk Android. Jangan menghapus atau merusak fitur chat, room privat, kode undangan, indikator mengetik, berbagi file/media, QR code, maupun fitur yang sudah tersedia. Periksa seluruh proyek, perbaiki konfigurasi deployment, uji sintaks dan perilaku yang dapat diuji secara lokal, lalu berikan ZIP hasil perbaikan beserta panduan deployment Vercel + Render. Jelaskan dengan jujur fitur yang belum bisa diuji dan keterbatasan penyimpanan room dalam memori.
+
+PANDUAN DEPLOYMENT RINGKAS
+1. Upload seluruh isi folder proyek ke repository GitHub.
+2. Di Render, buat Web Service dari repository tersebut. Build Command: npm install. Start Command: npm start. Health Check Path: /health.
+3. Setelah backend Render aktif, salin URL HTTPS-nya ke public/config.js pada nilai SOCKET_URL.
+4. Atur environment variable FRONTEND_URL di Render ke URL domain Vercel. Jika menggunakan CORS_ORIGINS, masukkan hanya domain frontend yang diizinkan, dipisahkan koma sesuai implementasi server.
+5. Di Vercel, impor repository. Framework Preset: Other. Output Directory: public. Tidak perlu build command untuk frontend statis ini.
+6. Setelah mengatur URL dan domain, redeploy backend/frontend jika perlu. Uji /health, lalu uji chat dari dua browser/perangkat berbeda.
+7. Catatan: room yang disimpan di memori dapat hilang ketika backend restart atau instance berubah. Untuk penggunaan produksi, pertimbangkan penyimpanan persisten dan audit keamanan.
