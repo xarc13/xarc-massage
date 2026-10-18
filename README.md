@@ -37,7 +37,7 @@ Lalu buka `http://localhost:3000/health`. Untuk pengujian fitur, buka situs dari
 - Socket.IO membutuhkan backend Node.js yang hidup; jangan deploy `server.js` sebagai Vercel Function.
 - Socket.IO client dimuat dari jsDelivr CDN. Jika CDN diblokir, frontend tidak dapat tersambung.
 - Web Crypto, kamera, geolokasi, dan akses media memerlukan browser yang mendukung API terkait; kamera/geolokasi umumnya membutuhkan HTTPS atau localhost.
-- Ini MVP yang belum diaudit keamanan. Link undangan lengkap mengandung informasi untuk mengakses room/dekripsi. Jangan menganggapnya cocok untuk data sensitif tanpa audit independen.
+- Private Massage yang belum diaudit keamanan. Link undangan lengkap mengandung informasi untuk mengakses room/dekripsi. Jangan menganggapnya cocok untuk data sensitif tanpa audit independen.
 
 ## Tema visual dan prompt proyek
 
